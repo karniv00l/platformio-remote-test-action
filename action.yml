@@ -1,0 +1,83 @@
+name: PlatformIO Remote Test
+description: Run remotely tests from PlatformIO based project.
+author: Piotr Rogowski <piotr.rogowski0@gmail.com>
+branding:
+  icon: cpu
+  color: orange
+inputs:
+  environments:
+    description: Process specified environments (comma separated).
+    required: false
+  ignores:
+    description: Ignore tests where the name matches specified patterns. More than one pattern is allowed (comma separated).
+    required: false
+  upload-port:
+    description: A port that is intended for firmware uploading.
+    required: false
+  test-port:
+    description: A Serial/UART port that PlatformIO uses as communication interface between PlatformIO Unit Test Engine and target device.
+    required: false
+  project-dir:
+    description: Specify the path to project directory. By default, project-dir is equal to current working directory (CWD).
+    required: false
+  force-remote:
+    description: By default, Remote Development processes project on a host machine and deploy final testing firmware (program) to remote device (embedded board).
+    required: false
+  without-building:
+    description: Skip building stage.
+    required: false
+  without-uploading:
+    description: Skip uploading stage.
+    required: false
+  verbose:
+    description: Shows detailed information when processing environments.
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Cache pip
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Cache PlatformIO
+      uses: actions/cache@v2
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+    - name: Set up Python
+      uses: actions/setup-python@v2
+    - name: Install PlatformIO
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade platformio
+    - name: Run PlatformIO
+      shell: bash
+      run: |
+        environments=${{ inputs.environments }}
+        ignores=${{ inputs.ignores }}
+        upload_port=${{ inputs.upload-port }}
+        test_port=${{ inputs.test-port }}
+        project_dir=${{ inputs.project-dir }}
+        force_remote=${{ inputs.force-remote }}
+        without_building=${{ inputs.without-building }}
+        without_uploading=${{ inputs.without-uploading }}
+        verbose=${{ inputs.verbose }}
+
+        args=()
+
+        if [ -n "$environments" ]; then args+=("--environment ${environments//,/ -e }"); fi
+        if [ -n "$ignores" ]; then args+=("--ignore ${ignores//,/ -i }"); fi
+        if [ -n "$upload_port" ]; then args+=("--upload-port $upload_port"); fi
+        if [ -n "$test_port" ]; then args+=("--test-port $test_port"); fi
+        if [ -n "$project_dir" ]; then args+=("--project-dir $project_dir"); fi
+        if [ -n "$force_remote" ]; then args+=("--force-remote"); fi
+        if [ -n "$without_building" ]; then args+=("--without-building"); fi
+        if [ -n "$without_uploading" ]; then args+=("--without-uploading"); fi
+        if [ -n "$verbose" ]; then args+=("--verbose"); fi
+
+        echo $args | xargs pio remote test
