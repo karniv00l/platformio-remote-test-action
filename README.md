@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: PlatformIO Test
         uses: karniv00l/platformio-remote-test-action@0.1.0
         with:
