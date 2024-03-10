@@ -82,4 +82,4 @@ runs:
         if [ -n "$without_uploading" ]; then args+=("--without-uploading"); fi
         if [ -n "$verbose" ]; then args+=("--verbose"); fi
 
-        echo $args | xargs pio remote test
+        echo ${args[*]} | xargs pio remote test
